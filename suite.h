@@ -3,7 +3,7 @@
 
 class Suite { 
 public:
-  double FuncA();
+  double FuncA(int n, double x);
 };
 
 #endif
