@@ -3,6 +3,12 @@
 
 int main() {
   Suite suite;
-  std::cout << "FuncA result: " << suite.FuncA() << std::endl;
+  int n; //number of elements
+  double x;
+  
+  std::cout << "Enter x";
+  std::cin >> x;
+
+  std::cout << "FuncA result: " << suite.FuncA(n, x) << std::endl;
   return 0;
 }
