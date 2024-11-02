@@ -26,4 +26,4 @@ jobs:
           make
 
       - name: Run tests
-        run: .tests/main_test
+        run: ./tests/main_test
