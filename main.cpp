@@ -3,9 +3,9 @@
 
 int main() {
   Suite suite;
-  int n; //number of elements
+  int n = 5; //number of elements
   double x;
-  
+ 
   std::cout << "Enter x";
   std::cin >> x;
 
