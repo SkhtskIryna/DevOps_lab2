@@ -22,7 +22,7 @@ jobs:
           autoconf
           automake --add-missing
           ./configure
-          cmake ..
+          cmake
           make
 
       - name: Run tests
