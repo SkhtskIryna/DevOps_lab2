@@ -1,0 +1,39 @@
+name: Build and Package with Automake
+
+on:
+  push:
+    branches: [ "branchAutomake" ]
+  pull_request:
+    branches: [ "branchAutomake" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install build essentials and Autotools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake
+
+      - name: Generate configuration scripts
+        run: |
+          aclocal
+          autoconf
+          automake --add-missing
+
+      - name: Configure and build
+        run: |
+          ./configure
+          make
+
+      - name: Package into tarball
+        run: make dist
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v2
+        with:
+          name: program-tarball
+          path: program-*.tar.gz
