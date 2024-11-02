@@ -34,8 +34,11 @@ jobs:
         run: |
           dpkg-deb --build deb
 
+      - name: List files
+        run: ls -la
+
       - name: Upload .deb package
         uses: actions/upload-artifact@v3
         with:
           name: program-deb-package
-          path: deb/*.deb
+          path: deb.deb
