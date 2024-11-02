@@ -2,9 +2,9 @@ name: Build and Package as .deb
 
 on:
   push:
-    branches: [ "branchAutomake" ]
+    branches: [ "branchAutoPackage" ]
   pull_request:
-    branches: [ "branchAutomake" ]
+    branches: [ "branchAutoPackage" ]
 
 jobs:
   build:
