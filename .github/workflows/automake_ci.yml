@@ -2,15 +2,16 @@ name: Build and Package with Automake
 
 on:
   push:
-    branches: [ "branchAutomake" ]
+    branches: [branchAutomake]
   pull_request:
-    branches: [ "branchAutomake" ]
+    branches: [branchAutomake]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Install build essentials and Autotools
@@ -28,12 +29,13 @@ jobs:
         run: |
           ./configure
           make
+          make check
 
       - name: Package into tarball
         run: make dist
 
       - name: Upload tarball
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: program-tarball
           path: program-*.tar.gz
