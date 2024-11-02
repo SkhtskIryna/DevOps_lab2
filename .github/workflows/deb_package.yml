@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install build essentials and Autotools
         run: |
@@ -35,7 +35,7 @@ jobs:
           dpkg-deb --build deb
 
       - name: Upload .deb package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: program-deb-package
           path: program-*.deb
