@@ -18,10 +18,13 @@ jobs:
 
       - name: Build
         run: |
+          mkdir tests
+          cd tests
           aclocal
           autoconf
           automake --add-missing
           ./configure
+          cmake ..
           make
 
       - name: Run tests
