@@ -2,9 +2,13 @@ PACKAGE = program
 VERSION = 1.0
 PACKAGE_BUGREPORT = foxira242@gmail.com
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS = foreign subdir-objects
+
 bin_PROGRAMS = program
 program_SOURCES = main.cpp suite.cpp
+
+bin_PROGRAMS += test
+test_SOURCES = tests/main_test.cpp suite.cpp
 
 CTRLF_DIR = $(CURDIR)/deb/DEBIAN
 CTRLF_NAME = $(CTRLF_DIR)/control

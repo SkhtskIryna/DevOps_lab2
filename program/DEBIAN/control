@@ -1,6 +1,0 @@
-Package: program
-Version: 1.0
-Architecture: arm64
-Maintainer: Iryna Sakhatska <foxira242@gmail.com>
-Description: calculation software
-	Advanced management package

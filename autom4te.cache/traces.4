@@ -1061,14 +1061,22 @@ m4trace:configure.ac:6: -1- PKG_CHECK_EXISTS([glib-2.0], [pkg_cv_[]PROGRAM_CFLAG
 m4trace:configure.ac:6: -1- PKG_CHECK_EXISTS([glib-2.0], [pkg_cv_[]PROGRAM_LIBS=`$PKG_CONFIG --[]libs "glib-2.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
 m4trace:configure.ac:6: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:8: -1- m4_pattern_allow([^LIB@&t@OBJS$])
-m4trace:configure.ac:8: -1- m4_pattern_allow([^LTLIBOBJS$])
-m4trace:configure.ac:8: -1- AM_CONDITIONAL([am__EXEEXT], [test -n "$EXEEXT"])
-m4trace:configure.ac:8: -1- m4_pattern_allow([^am__EXEEXT_TRUE$])
-m4trace:configure.ac:8: -1- m4_pattern_allow([^am__EXEEXT_FALSE$])
-m4trace:configure.ac:8: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_TRUE])
-m4trace:configure.ac:8: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_FALSE])
-m4trace:configure.ac:8: -1- _AM_OUTPUT_DEPENDENCY_COMMANDS
-m4trace:configure.ac:8: -1- AM_RUN_LOG([cd "$am_dirpart" \
+m4trace:configure.ac:7: -1- PKG_CHECK_MODULES([GTEST], [gtest])
+m4trace:configure.ac:7: -1- m4_pattern_allow([^GTEST_CFLAGS$])
+m4trace:configure.ac:7: -1- m4_pattern_allow([^GTEST_LIBS$])
+m4trace:configure.ac:7: -1- PKG_CHECK_EXISTS([gtest], [pkg_cv_[]GTEST_CFLAGS=`$PKG_CONFIG --[]cflags "gtest" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:7: -1- PKG_CHECK_EXISTS([gtest], [pkg_cv_[]GTEST_LIBS=`$PKG_CONFIG --[]libs "gtest" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:7: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:9: -1- m4_pattern_allow([^LIB@&t@OBJS$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^LTLIBOBJS$])
+m4trace:configure.ac:9: -1- AM_CONDITIONAL([am__EXEEXT], [test -n "$EXEEXT"])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^am__EXEEXT_TRUE$])
+m4trace:configure.ac:9: -1- m4_pattern_allow([^am__EXEEXT_FALSE$])
+m4trace:configure.ac:9: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_TRUE])
+m4trace:configure.ac:9: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_FALSE])
+m4trace:configure.ac:9: -1- _AM_OUTPUT_DEPENDENCY_COMMANDS
+m4trace:configure.ac:9: -1- AM_RUN_LOG([cd "$am_dirpart" \
       && sed -e '/# am--include-marker/d' "$am_filepart" \
         | $MAKE -f - am--depfiles])

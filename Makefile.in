@@ -86,7 +86,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = program$(EXEEXT)
+bin_PROGRAMS = program$(EXEEXT) test$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -104,6 +104,10 @@ PROGRAMS = $(bin_PROGRAMS)
 am_program_OBJECTS = main.$(OBJEXT) suite.$(OBJEXT)
 program_OBJECTS = $(am_program_OBJECTS)
 program_LDADD = $(LDADD)
+am__dirstamp = $(am__leading_dot)dirstamp
+am_test_OBJECTS = tests/main_test.$(OBJEXT) suite.$(OBJEXT)
+test_OBJECTS = $(am_test_OBJECTS)
+test_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -119,7 +123,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/main.Po ./$(DEPDIR)/suite.Po
+am__depfiles_remade = ./$(DEPDIR)/main.Po ./$(DEPDIR)/suite.Po \
+	tests/$(DEPDIR)/main_test.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -134,8 +139,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(program_SOURCES)
-DIST_SOURCES = $(program_SOURCES)
+SOURCES = $(program_SOURCES) $(test_SOURCES)
+DIST_SOURCES = $(program_SOURCES) $(test_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -200,6 +205,8 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
+GTEST_CFLAGS = @GTEST_CFLAGS@
+GTEST_LIBS = @GTEST_LIBS@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -272,8 +279,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS = foreign subdir-objects
 program_SOURCES = main.cpp suite.cpp
+test_SOURCES = tests/main_test.cpp suite.cpp
 CTRLF_DIR = $(CURDIR)/deb/DEBIAN
 CTRLF_NAME = $(CTRLF_DIR)/control
 all: all-am
@@ -359,15 +367,29 @@ clean-binPROGRAMS:
 program$(EXEEXT): $(program_OBJECTS) $(program_DEPENDENCIES) $(EXTRA_program_DEPENDENCIES) 
 	@rm -f program$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(program_OBJECTS) $(program_LDADD) $(LIBS)
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/main_test.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+test$(EXEEXT): $(test_OBJECTS) $(test_DEPENDENCIES) $(EXTRA_test_DEPENDENCIES) 
+	@rm -f test$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_OBJECTS) $(test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f tests/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/suite.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/main_test.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -376,15 +398,17 @@ $(am__depfiles_remade):
 am--depfiles: $(am__depfiles_remade)
 
 .cpp.o:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
 
 .cpp.obj:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
@@ -652,6 +676,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
+	-rm -f tests/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -664,6 +690,7 @@ distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 		-rm -f ./$(DEPDIR)/main.Po
 	-rm -f ./$(DEPDIR)/suite.Po
+	-rm -f tests/$(DEPDIR)/main_test.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -713,6 +740,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -rf $(top_srcdir)/autom4te.cache
 		-rm -f ./$(DEPDIR)/main.Po
 	-rm -f ./$(DEPDIR)/suite.Po
+	-rm -f tests/$(DEPDIR)/main_test.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
