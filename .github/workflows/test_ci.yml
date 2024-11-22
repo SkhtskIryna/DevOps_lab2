@@ -18,7 +18,7 @@ jobs:
           echo "FROM alpine" > Dockerfile
           echo "MAINTAINER foxira242@gmail.com" >> Dockerfile
           echo "WORKDIR /home/app" >> Dockerfile
-          echo "./program ." >> Dockerfile
+          echo "COPY ./program ." >> Dockerfile
           echo "apk add libstdc++" >> Dockerfile
           echo "apk add libc6-compat" >> Dockerfile
           echo "ENTRYPOINT ["./program"]" >> Dockerfile
