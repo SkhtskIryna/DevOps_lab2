@@ -19,8 +19,8 @@ jobs:
           echo "MAINTAINER foxira242@gmail.com" >> Dockerfile
           echo "WORKDIR /home/app" >> Dockerfile
           echo "COPY ./program ." >> Dockerfile
-          echo "apk add libstdc++" >> Dockerfile
-          echo "apk add libc6-compat" >> Dockerfile
+          echo "RUN apk add libstdc++" >> Dockerfile
+          echo "RUN apk add libc6-compat" >> Dockerfile
           echo "ENTRYPOINT ["./program"]" >> Dockerfile
           docker build -t my-http-server .
 
