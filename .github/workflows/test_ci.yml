@@ -22,7 +22,7 @@ jobs:
           echo "RUN apk add libstdc++" >> Dockerfile
           echo "RUN apk add libc6-compat" >> Dockerfile
           echo "ENTRYPOINT ["./program"]" >> Dockerfile
-          docker build -t my-http-server .
+          docker build -t skhtskiryna/my-http-server:latest .
 
       - name: Log in to DockerHub
         env:
