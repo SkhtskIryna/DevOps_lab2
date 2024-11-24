@@ -24,6 +24,23 @@ jobs:
           ./configure
           cmake
           make
+
+      - name: Start the Server
+        run: ./server &
+        env:
+          SERVER_PORT: 8081
+
+      - name: Wait for Server to Start
+        run: |
+          for i in {1..10}; do
+            if nc -z localhost 8081; then
+              echo "Server is up and running!";
+              exit 0;
+            fi
+            echo "Waiting for server to start...";
+            sleep 2;
+          done
+          echo "Server failed to start in time." && exit 1
           
       - name: Compile test.cpp
         run: g++ -o test_server test.cpp
