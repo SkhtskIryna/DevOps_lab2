@@ -1,0 +1,32 @@
+name: Test CI
+
+on:
+  push:
+    branches: [ "branchAutoTest" ]
+  pull_request:
+    branches: [ "branchAutoTest" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get  install -y build-essential libgtest-dev cmake
+
+      - name: Build
+        run: |
+          aclocal
+          autoconf
+          automake --add-missing
+          ./configure
+          cmake
+          make
+          
+      - name: Compile test.cpp
+        run: g++ -o test_server test.cpp
+
+      - name: Run tests
+        run: ./test_server
