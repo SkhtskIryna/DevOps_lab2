@@ -1,0 +1,39 @@
+name: Test docker
+
+on:
+  push:
+    branches: [ "branchHTTPserver" ]
+  pull_request:
+    branches: [ "branchHTTPserver" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Build Docker image
+        run: |
+          echo "FROM alpine" > Dockerfile
+          echo "MAINTAINER foxira242@gmail.com" >> Dockerfile
+          echo "WORKDIR /home/app" >> Dockerfile
+          echo "COPY ./program ." >> Dockerfile
+          echo "RUN apk add libstdc++" >> Dockerfile
+          echo "RUN apk add libc6-compat" >> Dockerfile
+          echo "ENTRYPOINT ["./program"]" >> Dockerfile
+          docker build -t skhtskiryna/my-http-server:latest .
+
+      - name: Log in to DockerHub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
+
+      - name: Push Docker image
+        run: docker push skhtskiryna/my-http-server:latest
+
+      - name: Run Docker container
+        run: |
+          docker run -d --name my_running_server -p 8081:8081 skhtskiryna/my-http-server:latest
+          docker ps
