@@ -2,9 +2,9 @@ name: Test CI
 
 on:
   push:
-    branches: [ "branchAutoTest" ]
+    branches: [ "branchHTTPserver" ]
   pull_request:
-    branches: [ "branchAutoTest" ]
+    branches: [ "branchHTTPserver" ]
 
 jobs:
   build:
@@ -25,5 +25,8 @@ jobs:
           cmake
           make
 
+      - name: Compile test.cpp
+        run: g++ -o test_server test.cpp
+
       - name: Run tests
-        run: ./tests/main_test
+        run: ./test_server
