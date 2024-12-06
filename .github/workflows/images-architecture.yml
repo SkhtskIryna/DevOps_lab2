@@ -32,9 +32,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Push manifest to docker hub
+        run: docker manifest push denisshap/programnew
       - name: Build and push the Docker image
         run: |
-          docker buildx build --platform linux/${{ matrix.architecture }} \
+          docker build --platform linux/${{ matrix.architecture }} \
             -t skhtskiryna/my-http-server:${{ matrix.architecture }} --push .
 
       - name: Create and push manifest
