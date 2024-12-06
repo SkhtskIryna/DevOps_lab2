@@ -2,9 +2,9 @@ name: Build Multistage
 
 on:
   push:
-    branches: ["branchHTTPserver"]
+    branches: ["*"]
   pull_request:
-    branches: ["branchHTTPserver"]
+    branches: ["*"]
 
 jobs:
   build:
