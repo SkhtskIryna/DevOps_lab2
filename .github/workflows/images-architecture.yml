@@ -11,20 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        architecture: [amd64, arm64]
+        architecture: [amd64, arm64]  # Matrix testing for two architectures
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up QEMU
+      - name: Set up QEMU for multi-architecture support
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
       - name: Build contexts
-        run: docker buildx ls
+        run: docker buildx ls  # Check available platforms
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -37,18 +37,18 @@ jobs:
           docker buildx build --platform linux/${{ matrix.architecture }} \
             -t skhtskiryna/my-http-server:${{ matrix.architecture }} --push .
 
-      # Only create the manifest after both architectures are built
-      - name: Create and push manifest
-        if: ${{ matrix.architecture == 'amd64' }}  # Run this only after the `amd64` image is built
+      # Create the manifest only after both images are built
+      - name: Create and push multi-architecture manifest
+        if: ${{ matrix.architecture == 'arm64' }}  # This step runs only after the amd64 build
         run: |
-          # Wait for the amd64 and arm64 images to be pushed
+          # Wait for both amd64 and arm64 images to be available on Docker Hub
           echo "Waiting for both images to be available on Docker Hub..."
-          sleep 30  # Optional: Adjust sleep time if needed
+          sleep 30  # Adjust sleep time if needed
           
-          # Create a multi-architecture manifest list
+          # Create a multi-architecture manifest
           docker manifest create skhtskiryna/my-http-server:latest \
-            --platform linux/amd64 skhtskiryna/my-http-server:amd64 \
-            --platform linux/arm64 skhtskiryna/my-http-server:arm64
+            --amend skhtskiryna/my-http-server:amd64 \
+            --amend skhtskiryna/my-http-server:arm64
 
-          # Push the multi-architecture manifest list to Docker Hub
+          # Push the multi-architecture manifest to Docker Hub
           docker manifest push skhtskiryna/my-http-server:latest
