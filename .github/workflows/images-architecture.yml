@@ -32,8 +32,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push manifest to docker hub
-        run: docker manifest push denisshap/programnew
       - name: Build and push the Docker image
         run: |
           docker build --platform linux/${{ matrix.architecture }} \
