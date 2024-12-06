@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        architecture: [amd64, arm64]  # Matrix testing for two architectures
+        architecture: [amd64, arm64]  # Build for both amd64 and arm64 platforms
 
     steps:
       - name: Checkout repository
@@ -37,15 +37,14 @@ jobs:
           docker buildx build --platform linux/${{ matrix.architecture }} \
             -t skhtskiryna/my-http-server:${{ matrix.architecture }} --push .
 
-      # Create the manifest only after both images are built
+      # Ensure both images are built before creating the manifest
       - name: Create and push multi-architecture manifest
-        if: ${{ matrix.architecture == 'arm64' }}  # This step runs only after the amd64 build
         run: |
           # Wait for both amd64 and arm64 images to be available on Docker Hub
           echo "Waiting for both images to be available on Docker Hub..."
-          sleep 30  # Adjust sleep time if needed
+          sleep 10  # Adjust sleep time if needed
           
-          # Create a multi-architecture manifest
+          # Create a multi-architecture manifest that includes both images
           docker manifest create skhtskiryna/my-http-server:latest \
             --amend skhtskiryna/my-http-server:amd64 \
             --amend skhtskiryna/my-http-server:arm64
