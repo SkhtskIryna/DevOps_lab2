@@ -45,6 +45,10 @@ jobs:
           docker build --platform=linux/arm64 \
             -t skhtskiryna/my-http-server:arm64 --push .
 
+      # Add a delay to allow images to be fully pushed and available on Docker Hub
+      - name: Wait for images to be fully pushed
+        run: sleep 30  # Sleep for 30 seconds to allow images to propagate on Docker Hub
+
       # After building, verify if the images exist
       - name: Verify amd64 image is available
         run: |
