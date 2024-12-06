@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        architecture: [amd64, arm64]  # Build for both amd64 and arm64 platforms
+        architecture: [amd64, arm64]
 
     steps:
       - name: Checkout repository
@@ -39,11 +39,12 @@ jobs:
 
       # Ensure both images are built before creating the manifest
       - name: Create and push multi-architecture manifest
+        if: ${{ matrix.architecture == 'arm64' }}  # Only create manifest once arm64 is built
         run: |
           # Wait for both amd64 and arm64 images to be available on Docker Hub
           echo "Waiting for both images to be available on Docker Hub..."
-          sleep 10  # Adjust sleep time if needed
-          
+          sleep 30  # Adjust sleep time if needed
+
           # Create a multi-architecture manifest that includes both images
           docker manifest create skhtskiryna/my-http-server:latest \
             --amend skhtskiryna/my-http-server:amd64 \
