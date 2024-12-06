@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name:  Set up QEMU
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -34,12 +34,17 @@ jobs:
 
       - name: Build and push the Docker image
         run: |
-          docker build --platform linux/${{ matrix.architecture }} \
+          docker buildx build --platform linux/${{ matrix.architecture }} \
             -t skhtskiryna/my-http-server:${{ matrix.architecture }} --push .
 
+      # Only create the manifest once both architectures are built
       - name: Create and push manifest
+        if: matrix.architecture == 'amd64'  # Ensure we only create the manifest once
         run: |
+          # Create a multi-architecture manifest
           docker manifest create skhtskiryna/my-http-server:latest \
             --amend skhtskiryna/my-http-server:amd64 \
             --amend skhtskiryna/my-http-server:arm64
+          
+          # Push the multi-architecture manifest to Docker Hub
           docker manifest push skhtskiryna/my-http-server:latest
