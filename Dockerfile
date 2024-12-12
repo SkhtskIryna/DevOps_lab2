@@ -2,6 +2,8 @@ FROM alpine AS build
 
 # Install required packages
 RUN apk add --no-cache build-base make automake autoconf git pkgconfig glib-dev gtest-dev gtest cmake
+RUN apt-get update && \
+    apt-get install -y autoconf m4 make perl
 
 # Clone the repository and build the project
 WORKDIR /home/app
