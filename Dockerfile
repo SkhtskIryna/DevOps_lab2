@@ -26,6 +26,7 @@ RUN autoreconf -i  # Automatically runs autoconf, aclocal, autoheader, and autom
 # Configure and build the project
 RUN ./configure
 RUN cmake
+RUN make clean
 RUN make
 
 # Ensure the program binary exists
