@@ -7,10 +7,11 @@ RUN apk add --no-cache build-base make automake autoconf git pkgconfig glib-dev 
 WORKDIR /home/app
 RUN git clone --branch branchHTTPserver https://github.com/SkhtskIryna/DevOps_lab2.git
 WORKDIR /home/app/DevOps_lab2
-RUN autoconf && \
-    ./configure && \
-    cmake && \
-    make
+RUN autoconf
+RUN ./configure
+RUN cmake .
+RUN make
+
 # Ensure the program binary exists
 RUN test -f /home/app/DevOps_lab2/program
 
