@@ -25,9 +25,25 @@ jobs:
       - name: Make scriptA and scriptB executable
         run: chmod +x scriptA.sh scriptB.sh
 
+      - name: Ensure outputA.log and outputB.log exist
+        run: |
+          # Створюємо файли, якщо вони не існують
+          if [ ! -f "outputA.log" ]; then
+            touch outputA.log
+            echo "File outputA.log created!" > outputA.log
+          fi
+          if [ ! -f "outputB.log" ]; then
+            touch outputB.log
+            echo "File outputB.log created!" > outputB.log
+          fi
+
       - name: Test HTTP request loop scriptA
         run: |
           timeout 30 ./scriptA.sh > outputA.log
+          if [ ! -f "outputA.log" ]; then
+            echo "File outputA.log not found!"
+            exit 1
+          fi
           if grep -q "Sent HTTP request" outputA.log; then
             echo "scriptA executed successfully."
           else
@@ -38,6 +54,10 @@ jobs:
       - name: Test HTTP request loop scriptB
         run: |
           timeout 30 ./scriptB.sh > outputB.log
+          if [ ! -f "outputB.log" ]; then
+            echo "File outputB.log not found!"
+            exit 1
+          fi
           if grep -q "Sent HTTP request" outputB.log; then
             echo "scriptB executed successfully."
           else
@@ -51,6 +71,7 @@ jobs:
           echo "HTTP Server Logs:"
           cat server.log
           echo "scriptA Logs:"
-          cat outputA.log
+          cat outputA.log || echo "outputA.log not found!"
           echo "scriptB Logs:"
-          cat outputB.log
+          cat outputB.log || echo "outputB.log not found!"
+
