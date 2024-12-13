@@ -3,8 +3,8 @@
 # Infinite loop to send HTTP requests periodically
 while :
 do
-    # Generate a random delay between 5 and 10 seconds
-    delay=$(( RANDOM % 6 + 5 ))
+    # Generate a random delay between 1 and 3 seconds
+    delay=$(( RANDOM % 3 + 1 ))
 
     # Wait for the generated delay time
     sleep "$delay"
