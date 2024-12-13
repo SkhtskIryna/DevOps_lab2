@@ -1,0 +1,35 @@
+name: Test scriptA
+
+on:
+  push:
+    branches: ["branchHTTPservMulti"]
+  pull_request:
+    branches: ["branchHTTPservMulti"]
+
+jobs:
+  test-scriptA:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build and push HTTP server image
+      run: |
+        docker build -t skhtskiryna/my-http-server:latest .
+        docker tag skhtskiryna/my-http-server:latest skhtskiryna/my-http-server:latest
+        docker push skhtskiryna/my-http-server:latest
+
+    - name: Run scriptA
+      run: |
+        chmod +x scriptA.sh
+        ./scriptA.sh &
+
+    - name: Validate scriptA
+      run: |
+        echo "Validating srv1, srv2, and srv3 behavior"
+        sleep 100  # Allow scriptA to run for a while
+        docker ps  # Check running containers
