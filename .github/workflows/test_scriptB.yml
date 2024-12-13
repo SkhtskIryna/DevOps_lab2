@@ -15,18 +15,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Install Python for mock HTTP server
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3
+
+      # Start a mock HTTP server in the background
+      - name: Start HTTP server
+        run: |
+          nohup python3 -m http.server 8081 > server.log 2>&1 &
+          sleep 3 # Wait for the server to start
+
       # Ensure the script is executable
       - name: Make script executable
         run: chmod +x scriptB.sh
 
-      # Run a test for the script
+      # Run the script and terminate after 15 seconds to avoid infinite loop
       - name: Test HTTP request loop script
         run: |
-          # Start a mock HTTP server in the background
-          python3 -m http.server 8081 &
-
-          # Run the script and terminate after 15 seconds to avoid infinite loop
-          timeout 15 ./scriptB.sh
+          timeout 15 ./scriptB.sh > output.log
 
           # Check for HTTP response logs
           if grep -q "Sent HTTP request" output.log; then
@@ -35,3 +41,12 @@ jobs:
             echo "No HTTP request detected in logs."
             exit 1
           fi
+
+      # Debugging: Print logs if something fails
+      - name: Debug logs
+        if: failure()
+        run: |
+          echo "HTTP Server Logs:"
+          cat server.log
+          echo "Script Logs:"
+          cat output.log
