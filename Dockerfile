@@ -14,7 +14,8 @@ RUN apk add --no-cache \
     gtest-dev \
     gtest \
     cmake \
-    libstdc++
+    libstdc++ \
+    g++
 
 # Clone the repository and build the project
 WORKDIR /home/app
@@ -35,8 +36,10 @@ RUN test -f /home/app/DevOps_lab2/program
 
 FROM alpine
 
-# Install required runtime dependencies, including libstdc++
-RUN apk add --no-cache libstdc++
+# Install runtime dependencies, including libstdc++ and g++
+RUN apk add --no-cache \
+    libstdc++ \
+    g++
 
 # Copy the built program from the build stage
 COPY --from=build /home/app/DevOps_lab2/program /usr/local/bin/program
