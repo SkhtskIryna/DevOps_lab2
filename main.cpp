@@ -2,7 +2,7 @@
 #include <sys/wait.h>
 #include "suite.h"
 
-int LaunchHTTPServer(); // Declaration of the function to launch the HTTP server
+int CreateHTTPserver(); // Declaration of the function to launch the HTTP server
 
 // Handler for the SIGCHLD signal
 void HandleChildExitSignal(int signal) {
@@ -56,7 +56,7 @@ int main() {
               << computationSuite.FuncA(elementCount, userInput) << std::endl;
 
     // Launch the HTTP server
-    LaunchHTTPServer();
+    CreateHTTPserver();
 
     return 0;
 }

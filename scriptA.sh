@@ -17,7 +17,11 @@ start_container() {
 stop_container() {
     local container_name=$1
     echo "$(date '+%Y-%m-%d %H:%M:%S'): Stopping container $container_name"
-    docker kill "$container_name"
+    if docker ps --format "{{.Names}}" | grep -q "^$container_name$"; then
+        docker stop "$container_name"
+    else
+        echo "$(date '+%Y-%m-%d %H:%M:%S'): $container_name is not running."
+    fi
 }
 
 # Get CPU load for a container
@@ -39,7 +43,9 @@ get_cpu_index() {
 # Pull new Docker image if available
 pull_new_image() {
     echo "$(date '+%Y-%m-%d %H:%M:%S'): Checking for a new image..."
-    if docker pull skhtskiryna/my-http-server | grep -q "Downloaded newer image"; then
+    local current_image=$(docker inspect --format="{{.Image}}" srv1 || echo "none")
+    local latest_image=$(docker pull skhtskiryna/my-http-server | grep "Digest:" | awk '{print $2}')
+    if [[ "$current_image" != "$latest_image" ]]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S'): New image found."
         return 0
     else
