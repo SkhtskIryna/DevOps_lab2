@@ -1,0 +1,37 @@
+name: Test scriptB
+
+on:
+  push:
+    branches: ["branchHTTPservMulti"]
+  pull_request:
+    branches: ["branchHTTPservMulti"]
+
+jobs:
+  test_script:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Ensure the script is executable
+      - name: Make script executable
+        run: chmod +x scriptB.sh
+
+      # Run a test for the script
+      - name: Test HTTP request loop script
+        run: |
+          # Start a mock HTTP server in the background
+          python3 -m http.server 8081 &
+
+          # Run the script and terminate after 15 seconds to avoid infinite loop
+          timeout 15 ./scriptB.sh
+
+          # Check for HTTP response logs
+          if grep -q "Sent HTTP request" output.log; then
+            echo "Script executed successfully."
+          else
+            echo "No HTTP request detected in logs."
+            exit 1
+          fi
