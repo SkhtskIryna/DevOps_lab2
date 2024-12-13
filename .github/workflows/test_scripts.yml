@@ -1,0 +1,56 @@
+name: Test scripts
+
+on:
+  push:
+    branches: ["branchHTTPservMulti"]
+  pull_request:
+    branches: ["branchHTTPservMulti"]
+
+jobs:
+  test_script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3 curl
+
+      - name: Start HTTP server
+        run: |
+          nohup python3 -m http.server 8081 > server.log 2>&1 &
+          sleep 5
+
+      - name: Make scriptA and scriptB executable
+        run: chmod +x scriptA.sh scriptB.sh
+
+      - name: Test HTTP request loop scriptA
+        run: |
+          timeout 30 ./scriptA.sh > outputA.log
+          if grep -q "Sent HTTP request" outputA.log; then
+            echo "scriptA executed successfully."
+          else
+            echo "No HTTP request detected in scriptA logs."
+            exit 1
+          fi
+
+      - name: Test HTTP request loop scriptB
+        run: |
+          timeout 30 ./scriptB.sh > outputB.log
+          if grep -q "Sent HTTP request" outputB.log; then
+            echo "scriptB executed successfully."
+          else
+            echo "No HTTP request detected in scriptB logs."
+            exit 1
+          fi
+
+      - name: Debug Logs on Failure
+        if: failure()
+        run: |
+          echo "HTTP Server Logs:"
+          cat server.log
+          echo "scriptA Logs:"
+          cat outputA.log
+          echo "scriptB Logs:"
+          cat outputB.log
