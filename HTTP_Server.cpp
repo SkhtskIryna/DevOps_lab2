@@ -4,162 +4,293 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <vector>
+#include <errno.h>
 #include <chrono>
 #include <algorithm>
 #include <thread>
-#include <mutex>
 
 #define PORT 8081
 
 // HTTP headers
-const char* HTTP_200HEADER = "HTTP/1.1 200 OK\r\n";
-const char* HTTP_400HEADER = "HTTP/1.1 400 Bad Request\r\n";
-const char* HTTP_CONTENT_TYPE = "Content-Type: text/plain\r\n";
+#define HTTP_200HEADER "HTTP/1.1 200 OK\r\n"
+#define HTTP_404HEADER "HTTP/1.1 404 Not Found\r\n"
+#define HTTP_201HEADER "HTTP/1.1 201 Created\r\n"
+#define HTTP_400HEADER "HTTP/1.1 400 Bad Request\r\n"
+#define HTTP_404HEADER "HTTP/1.1 404 Not Found\r\n"
 
-// Mutex for thread-safe output (if needed)
-std::mutex io_mutex;
-
-void handleClient(int clientSocket);
-void handleCompute(int clientSocket);
-void sendResponse(int clientSocket, const char* header, const char* body);
-int CreateHTTPserver();
-
-int main() {
-    CreateHTTPserver();
-    return 0;
-}
+void SendGETresponse(int fd, char strFilePath[], char strResponse[]);
+void SendPUTresponse(int fd, char strFilePath[], char strBody[], char strResponse[]);
 
 int CreateHTTPserver() {
-    int serverSocket, clientSocket;
+    int connectionSocket, clientSocket, pid; 
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-
+    
     // Create the server socket
-    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("Socket creation failed");
+    if ((connectionSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("Socket creation failed\n");
         exit(EXIT_FAILURE);
     }
-
+    
     // Configure the server address
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
 
-    // Bind the socket to the address and port
-    if (bind(serverSocket, (struct sockaddr*)&address, sizeof(address)) < 0 ||
-        listen(serverSocket, 10) < 0) {
-        perror("Binding or listening failed");
-        close(serverSocket);
+    memset(address.sin_zero, '\0', sizeof(address.sin_zero));
+    
+    // Bind the socket to the address
+    if (bind(connectionSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("Socket bind failed\n");
+        close(connectionSocket);
         exit(EXIT_FAILURE);
     }
-
-    printf("Server listening on port %d...\n", PORT);
-
-    // Wait for incoming connections
-    while (true) {
-        printf("Waiting for connection...\n");
-
-        // Accept incoming connections
-        if ((clientSocket = accept(serverSocket, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
-            perror("Accept failed");
-            continue;
+    
+    // Listen for incoming connections
+    if (listen(connectionSocket, 10) < 0) {
+        perror("Socket listen failed\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    // Main server loop: wait for and handle client connections
+    while(1) {
+        printf("\nWaiting for a new connection...\n\n");
+        
+        // Accept a new client connection
+        if ((clientSocket = accept(connectionSocket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+            perror("Error accepting client connection\n");
+            exit(EXIT_FAILURE);
         }
 
-        printf("Connection accepted.\n");
+        // Create a child process to handle the client request
+        pid = fork();
+        if (pid < 0) {
+            perror("Fork failed\n");
+            exit(EXIT_FAILURE);
+        }   
 
-        // Handle each client in a separate thread
-        std::thread clientThread(handleClient, clientSocket);
-        clientThread.detach();  // Detach the thread to handle client independently
+        if (pid == 0) { // Child process: handle the client request
+            char buffer[30000] = {0};
+            char* ptrBuffer = &buffer[0];
+            
+            // Read client request
+            int iBytesRead = read(clientSocket, ptrBuffer, 30000);
+            printf("\nClient message of %d bytes:\n%s\n", iBytesRead, buffer);
+            
+            if (iBytesRead == 0) {
+                printf("Client closed connection prematurely\n");
+                close(clientSocket);
+                continue;
+            }
+
+            printf("\nParsing client request...\n");
+
+            // Parse HTTP request method (e.g., GET, PUT)
+            char strHTTP_requestMethod[10] = {0};
+            char* pch = strchr(ptrBuffer, ' ');
+            strncpy(strHTTP_requestMethod, ptrBuffer, pch - ptrBuffer);
+            printf("Client method: %s\n", strHTTP_requestMethod);
+            
+            ptrBuffer = pch + 1;
+
+            // Parse HTTP request path (e.g., /index.html)
+            char strHTTP_requestPath[200] = {0};
+            pch = strchr(ptrBuffer, ' ');
+            strncpy(strHTTP_requestPath, ptrBuffer, pch - ptrBuffer);
+            printf("Client requested path: %s\n", strHTTP_requestPath);
+            
+            // Parse the file extension (e.g., .jpg, .html)
+            char strHTTPreqExt[200] = {0};
+            pch = strrchr(strHTTP_requestPath, '.');
+            if (pch != NULL) strcpy(strHTTPreqExt, pch + 1);
+
+            char strFilePath[500] = {0};
+            char strResponse[500] = {0};
+
+            // Handle different request paths and methods
+            if (!strcmp(strHTTP_requestMethod, "GET")) {
+                if (!strcmp(strHTTP_requestPath, "/")) {
+                    // Serve the index.html file if the path is "/"
+                    sprintf(strFilePath, "./index.html");
+                    sprintf(strResponse, "%s%s", HTTP_200HEADER, "Content-Type: text/html\r\n");
+
+                    sendGETresponse(clientSocket, strFilePath, strResponse);
+                } else if (!strcmp(strHTTP_requestPath, "/compute")) {
+                    // Handle the /compute request by performing heavy computation
+                    auto t1 = std::chrono::high_resolution_clock::now();    
+
+                    std::vector<double> aValues;
+                    aValues.reserve(2000000);
+                    FuncClass obj;
+                    std::mt19937 mtre {123};
+                    std::uniform_int_distribution<int> distr {5, 25};
+
+                    for (int i = 0; i < 2000000; i++) {
+                        aValues.push_back(obj.FuncA(distr(mtre)));
+                    }
+
+                    for (int i = 0; i < 1200; i++) {
+                        sort(begin(aValues), end(aValues));
+                    }
+                    
+                    auto t2 = std::chrono::high_resolution_clock::now();
+                    auto int_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+                    int iMS = int_ms.count();
+
+                    char strTimeEllapsed[20];
+                    sprintf(strTimeEllapsed, "%i", iMS);
+
+                    sprintf(strResponse, "%sContent-type: text/html\r\nContent-Length: %ld\r\n\r\n", HTTP_200HEADER, strlen(strTimeEllapsed));
+
+                    write(clientSocket, strResponse, strlen(strResponse));
+                    printf("\nResponse: \n%s\n", strResponse);
+
+                    write(clientSocket, strTimeEllapsed, strlen(strTimeEllapsed));
+                    printf("Elapsed time: %s ms\n", strTimeEllapsed);
+                } else if ((!strcmp(strHTTPreqExt, "JPG")) || (!strcmp(strHTTPreqExt, "jpg"))) {
+                    // Serve image file if the request is for a JPG
+                    sprintf(strFilePath, ".%s", strHTTP_requestPath);
+                    sprintf(strResponse, "%s%s", HTTP_200HEADER, "Content-Type: image/jpeg\r\n");
+
+                    SendGETresponse(clientSocket, strFilePath, strResponse);
+                } else if (!strcmp(strHTTPreqExt, "ico")) {
+                    // Serve favicon.ico if requested
+                    sprintf(strFilePath, "./img/favicon.png");
+                    sprintf(strResponse, "%s%s", HTTP_200HEADER, "Content-Type: image/vnd.microsoft.icon\r\n");
+
+                    SendGETresponse(clientSocket, strFilePath, strResponse);
+                } else if (!strcmp(strHTTPreqExt, "js")) {
+                    // Serve JavaScript file if requested
+                    sprintf(strFilePath, ".%s", strHTTP_requestPath);
+                    sprintf(strResponse, "%s%s", HTTP_200HEADER, "Content-Type: text/javascript\r\n");
+
+                    SendGETresponse(clientSocket, strFilePath, strResponse);
+                } else if (!strcmp(strHTTPreqExt, "png")) {
+                    // Serve PNG image file if requested
+                    sprintf(strFilePath, ".%s", strHTTP_requestPath);
+                    sprintf(strResponse, "%s%s", HTTP_200HEADER, "Content-Type: image/png\r\nCache-Control: max-age=3600\r\n");
+
+                    SendGETresponse(clientSocket, strFilePath, strResponse);
+                } else {
+                    // Default response for unknown mime types
+                    sprintf(strFilePath, ".%s", strHTTP_requestPath);
+                    sprintf(strResponse, "%s%s", HTTP_200HEADER, "Content-Type: text/plain\r\n");
+
+                    SendGETresponse(clientSocket, strFilePath, strResponse);
+                }
+            } else if (!strcmp(strHTTP_requestMethod, "PUT")) {
+                // Handle PUT request to upload data
+                ptrBuffer = strstr(buffer, "\r\n\r\n");
+                ptrBuffer += 4;
+
+                if (ptrBuffer) {
+                    sprintf(strFilePath, ".%s", strHTTP_requestPath);
+                    sprintf(strResponse, "%s", HTTP_201HEADER);
+
+                    SendPUTresponse(clientSocket, strFilePath, ptrBuffer, strResponse);
+                }
+            }
+
+            // Close the client connection
+            close(clientSocket);
+            return 0;
+        } else { // Parent process branch
+            printf("Forked a child process with PID: %d \n", pid);
+            close(clientSocket);
+        }
     }
 
-    close(serverSocket);
+    // Close the server connection socket
+    close(connectionSocket);
     return 0;
 }
 
-void handleClient(int clientSocket) {
-    char buffer[1024] = {0};
-    
-    // Read the incoming request
-    ssize_t bytesRead = read(clientSocket, buffer, sizeof(buffer));
-
-    if (bytesRead <= 0) {
-        std::lock_guard<std::mutex> lock(io_mutex);
-        printf("Failed to read client data. Bytes read: %zd\n", bytesRead);
+void SendPUTresponse(int fdSocket, char strFilePath[], char strBody[], char strResponse[]) {
+    // Open the file for writing, create or truncate it
+    int fdFile = open(strFilePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fdFile < 0) {
+        // Generate and send an HTTP 400 response if the file cannot be opened
+        sprintf(strResponse, "%s", HTTP_400HEADER);
+        write(fdSocket, strResponse, strlen(strResponse));
+        
+        // Log the error
+        printf("\nError: Unable to save file path: %s (error code: %d)\n", strFilePath, fdFile);
+        printf("Response sent to client:\n%s\n", strResponse);
         return;
     }
 
-    std::lock_guard<std::mutex> lock(io_mutex);
-    printf("Received request:\n%s\n", buffer);
+    // Log the response before sending it
+    printf("\nResponse to client:\n%s\n", strResponse);
+    int iRes = write(fdSocket, strResponse, strlen(strResponse));
+    if (iRes < 0) {
+        // Log the error if unable to write to the client socket
+        printf("\nError: Unable to write to client socket (error code: %d)\n", iRes);
+        return;
+    }
 
-    // Parse the HTTP request
-    char method[10] = {0}, path[200] = {0};
-    sscanf(buffer, "%s %s", method, path);
+    // Write the body content to the file
+    iRes = write(fdFile, strBody, strlen(strBody));
+    if (iRes < 0) {
+        // Log the error if unable to write to the file
+        printf("\nError: Unable to write to file: %s (error code: %d)\n", strFilePath, fdFile);
+        return;
+    }
 
-    printf("Method: %s, Path: %s\n", method, path);
+    // Close the file after successful write
+    close(fdFile);
+}
 
-    // Handle only GET requests
-    if (strcmp(method, "GET") == 0) {
-        if (strcmp(path, "/compute") == 0) {
-            handleCompute(clientSocket);
-        } else {
-            sendResponse(clientSocket, HTTP_400HEADER, "Invalid path");
+void SendGETresponse(int fdSocket, char strFilePath[], char strResponse[]) {
+    // Open the file in read-only mode
+    int fdFile = open(strFilePath, O_RDONLY);
+    if (fdFile < 0) {
+        // Send an HTTP 404 response if the file cannot be opened
+        sprintf(strResponse, "%s", HTTP_404HEADER);
+        write(fdSocket, strResponse, strlen(strResponse));
+        
+        // Log the error and response
+        printf("\nError: Unable to open file path: %s (error code: %d)\n", strFilePath, fdFile);
+        printf("Response sent to client:\n%s\n", strResponse);
+        return;
+    }
+     
+    // Get file metadata, such as size and block size
+    struct stat stat_buf;
+    fstat(fdFile, &stat_buf);
+    int file_total_size = stat_buf.st_size;
+    int block_size = stat_buf.st_blksize;
+    
+    // Append the Content-Length header to the response
+    char* strOffset = strResponse + strlen(strResponse);
+    sprintf(strOffset, "Content-Length: %d\r\n\r\n", file_total_size);
+
+    // Log the response header
+    printf("\nResponse header:\n%s\n", strResponse);
+    int iRes = write(fdSocket, strResponse, strlen(strResponse));
+    if (iRes < 0) {
+        // Log the error if unable to write to the client socket
+        printf("\nError: Unable to write to client socket (error code: %d)\n", iRes);
+        return;
+    }
+		
+    // Send the file content in chunks using sendfile()
+    while (file_total_size > 0) {
+        int iToSend = (file_total_size < block_size) ? file_total_size : block_size;
+        int done_bytes = sendfile(fdSocket, fdFile, NULL, iToSend);
+        if (done_bytes < 0) {
+            // Log the error if unable to send the file content
+            printf("\nError: Unable to write file content to client socket (error code: %d)\n", done_bytes);
+            return;
         }
-    } else {
-        sendResponse(clientSocket, HTTP_400HEADER, "Invalid method");
+		  
+        file_total_size -= done_bytes; // Update the remaining file size
     }
 
-    close(clientSocket);
-}
-
-void handleCompute(int clientSocket) {
-    // Start timing
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // Simplify the computation for debugging
-    std::vector<double> values(10000);  // Reduced size for testing
-    Suite suite;
-    for (size_t i = 0; i < values.size(); ++i) {
-        values[i] = suite.FuncA(5, i % 20 + 0.1);  // Simple calculation
-    }
-
-    for (int i = 0; i < 100; ++i) {  // Reduced number of sorts
-        std::sort(values.begin(), values.end());  // Sort less for testing
-    }
-
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                       std::chrono::high_resolution_clock::now() - start)
-                       .count();  // Calculate elapsed time
-
-    // Formulate the response body
-    char body[100];
-    sprintf(body, "Elapsed time: %ld ms", elapsed);
-
-    // Send the response back to the client
-    sendResponse(clientSocket, HTTP_200HEADER, body);
-}
-
-void sendResponse(int clientSocket, const char* header, const char* body) {
-    char response[1024];
-
-    // Calculate content length (length of body)
-    int contentLength = strlen(body);
-    
-    // Ensure the response header is properly formatted
-    sprintf(response, "%s%sContent-Length: %d\r\n\r\n%s", header, HTTP_CONTENT_TYPE, contentLength, body);
-
-    // Log the entire response before sending
-    std::lock_guard<std::mutex> lock(io_mutex);
-    printf("Sending response:\n%s\n", response);
-    
-    // Send the response to the client using send()
-    ssize_t bytesSent = send(clientSocket, response, strlen(response), 0);
-
-    if (bytesSent == -1) {
-        perror("Failed to send response");
-    } else {
-        printf("Response sent successfully, %ld bytes\n", bytesSent);
-    }
+    // Close the file descriptor
+    close(fdFile);
 }
