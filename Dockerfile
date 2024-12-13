@@ -19,27 +19,19 @@ RUN apk add --no-cache \
 
 # Clone the repository and build the project
 WORKDIR /home/app
-RUN git clone --branch branchHTTPserver https://github.com/SkhtskIryna/DevOps_lab2.git
+RUN git clone --branch branchHTTPservMulti https://github.com/SkhtskIryna/DevOps_lab2.git
 WORKDIR /home/app/DevOps_lab2
 
-# Regenerate the build system using autoreconf
-RUN autoreconf -i  # Automatically runs autoconf, aclocal, autoheader, and automake
-
 # Configure and build the project
+RUN autoreconf -fiv
 RUN ./configure
 RUN cmake
 RUN make clean
 RUN make
 
-# Ensure the program binary exists
-RUN test -f /home/app/DevOps_lab2/program
+RUN ls -la /home/app/DevOps_lab2
 
 FROM alpine
-
-# Install runtime dependencies, including libstdc++ and g++
-RUN apk add --no-cache \
-    libstdc++ \
-    g++
 
 # Copy the built program from the build stage
 COPY --from=build /home/app/DevOps_lab2/program /usr/local/bin/program
@@ -49,4 +41,6 @@ RUN chmod +x /usr/local/bin/program
 
 # Set the entry point
 ENTRYPOINT ["/usr/local/bin/program"]
+
+RUN ls -la /usr/local/bin
 
