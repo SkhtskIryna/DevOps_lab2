@@ -2,8 +2,7 @@
 #define HTTP_SERVER_H
 
 int CreateHTTPserver();
-void handleClient(int clientSocket);
-void handleCompute(int clientSocket);
-void sendResponse(int clientSocket, const char* header, const char* body);
+void SendGETresponse(int fd, char strFilePath[], char strResponse[]);
+void SendPUTresponse(int fd, char strFilePath[], char strBody[], char strResponse[]);
 
 #endif
