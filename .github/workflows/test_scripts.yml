@@ -43,12 +43,24 @@ jobs:
 
       - name: Test HTTP request loop scriptA
         run: |
-          timeout 60 ./scriptA.sh > outputA.log
+          # Wait for the HTTP server to be ready
+          until curl --silent --fail http://localhost:8081; do
+              echo "Waiting for the server to be available..."
+              sleep 5
+          done
+
+          # Measure execution time
+          START_TIME=$(date +%s)
+          timeout 120 ./scriptA.sh > outputA.log
+          END_TIME=$(date +%s)
+          
+          echo "Execution time: $((END_TIME - START_TIME)) seconds"
+
+          # Check if the script ran correctly
           if [ ! -f "outputA.log" ]; then
             echo "File outputA.log not found!"
             exit 1
           fi
-
           if grep -q "Sent HTTP request" outputA.log; then
             echo "scriptA executed successfully."
           else
