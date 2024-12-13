@@ -9,13 +9,28 @@
 #include <vector>
 #include <chrono>
 #include <algorithm>
-#include "HTTP_Server.h"
+#include <thread>
+#include <mutex>
 
 #define PORT 8081
 
 // HTTP headers
 const char* HTTP_200HEADER = "HTTP/1.1 200 OK\r\n";
 const char* HTTP_400HEADER = "HTTP/1.1 400 Bad Request\r\n";
+const char* HTTP_CONTENT_TYPE = "Content-Type: text/plain\r\n";
+
+// Mutex for thread-safe output (if needed)
+std::mutex io_mutex;
+
+void handleClient(int clientSocket);
+void handleCompute(int clientSocket);
+void sendResponse(int clientSocket, const char* header, const char* body);
+int CreateHTTPserver();
+
+int main() {
+    CreateHTTPserver();
+    return 0;
+}
 
 int CreateHTTPserver() {
     int serverSocket, clientSocket;
@@ -41,6 +56,8 @@ int CreateHTTPserver() {
         exit(EXIT_FAILURE);
     }
 
+    printf("Server listening on port %d...\n", PORT);
+
     // Wait for incoming connections
     while (true) {
         printf("Waiting for connection...\n");
@@ -53,15 +70,9 @@ int CreateHTTPserver() {
 
         printf("Connection accepted.\n");
 
-        // Fork a child process to handle the client
-        if (fork() == 0) {
-            close(serverSocket);
-            handleClient(clientSocket);
-            close(clientSocket);
-            exit(0);
-        }
-
-        close(clientSocket);
+        // Handle each client in a separate thread
+        std::thread clientThread(handleClient, clientSocket);
+        clientThread.detach();  // Detach the thread to handle client independently
     }
 
     close(serverSocket);
@@ -69,17 +80,19 @@ int CreateHTTPserver() {
 }
 
 void handleClient(int clientSocket) {
-    char buffer[30000] = {0};
+    char buffer[1024] = {0};
     
     // Read the incoming request
     ssize_t bytesRead = read(clientSocket, buffer, sizeof(buffer));
 
     if (bytesRead <= 0) {
+        std::lock_guard<std::mutex> lock(io_mutex);
         printf("Failed to read client data. Bytes read: %zd\n", bytesRead);
         return;
     }
 
-    printf("Received request: \n%s\n", buffer);
+    std::lock_guard<std::mutex> lock(io_mutex);
+    printf("Received request:\n%s\n", buffer);
 
     // Parse the HTTP request
     char method[10] = {0}, path[200] = {0};
@@ -90,18 +103,14 @@ void handleClient(int clientSocket) {
     // Handle only GET requests
     if (strcmp(method, "GET") == 0) {
         if (strcmp(path, "/compute") == 0) {
-            printf("Handling /compute route...\n");
             handleCompute(clientSocket);
         } else {
-            printf("Invalid path: %s\n", path);
             sendResponse(clientSocket, HTTP_400HEADER, "Invalid path");
         }
     } else {
-        printf("Invalid method: %s\n", method);
         sendResponse(clientSocket, HTTP_400HEADER, "Invalid method");
     }
 
-    // Ensure the socket is closed after handling the request
     close(clientSocket);
 }
 
@@ -110,20 +119,22 @@ void handleCompute(int clientSocket) {
     auto start = std::chrono::high_resolution_clock::now();
 
     // Simplify the computation for debugging
-    std::vector<double> values(100000);
+    std::vector<double> values(10000);  // Reduced size for testing
     Suite suite;
-    for (size_t i = 0; i < values.size(); ++i)
-        values[i] = suite.FuncA(5, i % 20 + 0.1); // Just a simple calculation
+    for (size_t i = 0; i < values.size(); ++i) {
+        values[i] = suite.FuncA(5, i % 20 + 0.1);  // Simple calculation
+    }
 
-    for (int i = 0; i < 500; ++i)  // Reduce the number of sorts for testing
-        std::sort(values.begin(), values.end()); // Sort less for testing
+    for (int i = 0; i < 100; ++i) {  // Reduced number of sorts
+        std::sort(values.begin(), values.end());  // Sort less for testing
+    }
 
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                        std::chrono::high_resolution_clock::now() - start)
-                       .count(); // Calculate elapsed time
+                       .count();  // Calculate elapsed time
 
     // Formulate the response body
-    char body[50];
+    char body[100];
     sprintf(body, "Elapsed time: %ld ms", elapsed);
 
     // Send the response back to the client
@@ -131,15 +142,16 @@ void handleCompute(int clientSocket) {
 }
 
 void sendResponse(int clientSocket, const char* header, const char* body) {
-    char response[500];
+    char response[1024];
 
     // Calculate content length (length of body)
     int contentLength = strlen(body);
     
     // Ensure the response header is properly formatted
-    sprintf(response, "%sContent-Length: %d\r\n\r\n%s", header, contentLength, body);
-    
+    sprintf(response, "%s%sContent-Length: %d\r\n\r\n%s", header, HTTP_CONTENT_TYPE, contentLength, body);
+
     // Log the entire response before sending
+    std::lock_guard<std::mutex> lock(io_mutex);
     printf("Sending response:\n%s\n", response);
     
     // Send the response to the client using send()
