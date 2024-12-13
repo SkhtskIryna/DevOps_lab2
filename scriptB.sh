@@ -1,20 +1,23 @@
 #!/bin/bash
 
-# Infinite loop to send HTTP requests periodically
-while :
-do
-    # Generate a random delay between 1 and 3 seconds
-    delay=$(( RANDOM % 3 + 1 ))
+# URL of the server
+SERVER_URL="127.0.0.1/compute"
 
-    # Wait for the generated delay time
-    sleep "$delay"
+# Function to make a GET request
+make_request() {
+    curl -i -X GET $SERVER_URL
+}
 
-    # Send an HTTP GET request to the server
-    response=$(curl -i -X GET 127.0.0.1:8081/compute 2>/dev/null)
+# Infinite loop to send requests asynchronously
+while true; do
+    # Sleep for a random time between 5 to 10 seconds
+    sleep_time=$((5 + RANDOM % 6))
+    sleep $sleep_time
 
-    # Print the response and the timestamp
-    echo "Sent HTTP request at $(date)"
-    echo "$response"
+    # Call the function to make a request asynchronously
+    make_request &
 
+    # Optional: print the time of the request for logging
+    echo "Request sent at $(date)"
     echo "---------------------------------------"
 done

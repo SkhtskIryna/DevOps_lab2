@@ -1,6 +1,6 @@
 FROM alpine AS build
 
-# Install required packages
+# Install required packages for building
 RUN apk add --no-cache \
     autoconf \
     m4 \
@@ -13,7 +13,8 @@ RUN apk add --no-cache \
     glib-dev \
     gtest-dev \
     gtest \
-    cmake
+    cmake \
+    libstdc++
 
 # Clone the repository and build the project
 WORKDIR /home/app
@@ -34,6 +35,9 @@ RUN test -f /home/app/DevOps_lab2/program
 
 FROM alpine
 
+# Install required runtime dependencies, including libstdc++
+RUN apk add --no-cache libstdc++
+
 # Copy the built program from the build stage
 COPY --from=build /home/app/DevOps_lab2/program /usr/local/bin/program
 
@@ -42,3 +46,4 @@ RUN chmod +x /usr/local/bin/program
 
 # Set the entry point
 ENTRYPOINT ["/usr/local/bin/program"]
+
