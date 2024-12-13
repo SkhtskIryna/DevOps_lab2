@@ -20,7 +20,12 @@ jobs:
       - name: Start HTTP server
         run: |
           nohup python3 -m http.server 8081 > server.log 2>&1 &
-          sleep 5
+
+          until curl --silent --head --fail http://localhost:8081; do
+            echo "Server not ready, waiting..."
+            sleep 2
+          done
+          echo "Server is ready."
 
       - name: Make scriptA and scriptB executable
         run: chmod +x scriptA.sh scriptB.sh
@@ -43,6 +48,7 @@ jobs:
             echo "File outputA.log not found!"
             exit 1
           fi
+
           if grep -q "Sent HTTP request" outputA.log; then
             echo "scriptA executed successfully."
           else
@@ -57,6 +63,7 @@ jobs:
             echo "File outputB.log not found!"
             exit 1
           fi
+
           if grep -q "Sent HTTP request" outputB.log; then
             echo "scriptB executed successfully."
           else
@@ -73,4 +80,3 @@ jobs:
           cat outputA.log || echo "outputA.log not found!"
           echo "scriptB Logs:"
           cat outputB.log || echo "outputB.log not found!"
-
