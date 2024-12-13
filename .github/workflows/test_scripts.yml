@@ -27,7 +27,6 @@ jobs:
 
       - name: Ensure outputA.log and outputB.log exist
         run: |
-          # Створюємо файли, якщо вони не існують
           if [ ! -f "outputA.log" ]; then
             touch outputA.log
             echo "File outputA.log created!" > outputA.log
@@ -39,7 +38,7 @@ jobs:
 
       - name: Test HTTP request loop scriptA
         run: |
-          timeout 30 ./scriptA.sh > outputA.log
+          timeout 60 ./scriptA.sh > outputA.log
           if [ ! -f "outputA.log" ]; then
             echo "File outputA.log not found!"
             exit 1
@@ -53,7 +52,7 @@ jobs:
 
       - name: Test HTTP request loop scriptB
         run: |
-          timeout 30 ./scriptB.sh > outputB.log
+          timeout 60 ./scriptB.sh > outputB.log
           if [ ! -f "outputB.log" ]; then
             echo "File outputB.log not found!"
             exit 1
