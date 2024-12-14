@@ -1,8 +1,9 @@
 #include <iostream>
 #include <sys/wait.h>
 #include "suite.h"
+#include "HTTP_Server.h"
 
-int CreateHTTPserver(); // Declaration of the function to launch the HTTP server
+int CreateHTTPserver();
 
 // Handler for the SIGCHLD signal
 void HandleChildExitSignal(int signal) {
@@ -45,18 +46,11 @@ int main() {
 
     Suite computationSuite; // Object of Suite class for calculations
     int elementCount = 3;   // Number of elements
-    double userInput;
-
-    // Prompt the user to enter a value
-    std::cout << "Please enter a value for x: ";
-    std::cin >> userInput;
-
+   
     // Output the result of the function computation
     std::cout << "Computation result of FuncA: " 
-              << computationSuite.FuncA(elementCount, userInput) << std::endl;
-
-    // Launch the HTTP server
+              << computationSuite.FuncA(elementCount) << std::endl;
+    
     CreateHTTPserver();
-
     return 0;
 }

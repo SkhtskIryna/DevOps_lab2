@@ -1,10 +1,12 @@
-#include "HTTP_Server.h"
-#include "suite.h"
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/sendfile.h>
 #include <sys/stat.h>
+#include <random>
 #include <netinet/in.h>
 #include <string.h>
 #include <vector>
@@ -12,6 +14,8 @@
 #include <chrono>
 #include <algorithm>
 #include <thread>
+#include "suite.h"
+#include "HTTP_Server.h"
 
 #define PORT 8081
 
@@ -22,15 +26,13 @@
 #define HTTP_400HEADER "HTTP/1.1 400 Bad Request\r\n"
 #define HTTP_404HEADER "HTTP/1.1 404 Not Found\r\n"
 
-void SendGETresponse(int fd, char strFilePath[], char strResponse[]);
-void SendPUTresponse(int fd, char strFilePath[], char strBody[], char strResponse[]);
-
 int CreateHTTPserver() {
     int connectionSocket, clientSocket, pid; 
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     
     // Create the server socket
+
     if ((connectionSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("Socket creation failed\n");
         exit(EXIT_FAILURE);
@@ -118,19 +120,19 @@ int CreateHTTPserver() {
                     sprintf(strFilePath, "./index.html");
                     sprintf(strResponse, "%s%s", HTTP_200HEADER, "Content-Type: text/html\r\n");
 
-                    sendGETresponse(clientSocket, strFilePath, strResponse);
+                    SendGETresponse(clientSocket, strFilePath, strResponse);
                 } else if (!strcmp(strHTTP_requestPath, "/compute")) {
                     // Handle the /compute request by performing heavy computation
                     auto t1 = std::chrono::high_resolution_clock::now();    
 
                     std::vector<double> aValues;
                     aValues.reserve(2000000);
-                    FuncClass obj;
+                    Suite computationSuite;
                     std::mt19937 mtre {123};
                     std::uniform_int_distribution<int> distr {5, 25};
 
                     for (int i = 0; i < 2000000; i++) {
-                        aValues.push_back(obj.FuncA(distr(mtre)));
+                        aValues.push_back(computationSuite.FuncA(distr(mtre)));
                     }
 
                     for (int i = 0; i < 1200; i++) {
@@ -147,11 +149,17 @@ int CreateHTTPserver() {
 
                     sprintf(strResponse, "%sContent-type: text/html\r\nContent-Length: %ld\r\n\r\n", HTTP_200HEADER, strlen(strTimeEllapsed));
 
-                    write(clientSocket, strResponse, strlen(strResponse));
+                    ssize_t bytesWritten = write(clientSocket, strResponse, strlen(strResponse));
+		    if (bytesWritten < 0) {
+    			perror("Write failed");
+		    }
                     printf("\nResponse: \n%s\n", strResponse);
 
-                    write(clientSocket, strTimeEllapsed, strlen(strTimeEllapsed));
-                    printf("Elapsed time: %s ms\n", strTimeEllapsed);
+                    bytesWritten = write(clientSocket, strTimeEllapsed, strlen(strTimeEllapsed));
+                    if (bytesWritten < 0) {
+                        perror("Write failed");
+                    }
+		    printf("Elapsed time: %s ms\n", strTimeEllapsed);
                 } else if ((!strcmp(strHTTPreqExt, "JPG")) || (!strcmp(strHTTPreqExt, "jpg"))) {
                     // Serve image file if the request is for a JPG
                     sprintf(strFilePath, ".%s", strHTTP_requestPath);
@@ -210,14 +218,16 @@ int CreateHTTPserver() {
     return 0;
 }
 
-void SendPUTresponse(int fdSocket, char strFilePath[], char strBody[], char strResponse[]) {
+void SendPUTresponse(int fdSocket, char* strFilePath, char* strBody, char* strResponse) {
     // Open the file for writing, create or truncate it
     int fdFile = open(strFilePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fdFile < 0) {
         // Generate and send an HTTP 400 response if the file cannot be opened
         sprintf(strResponse, "%s", HTTP_400HEADER);
-        write(fdSocket, strResponse, strlen(strResponse));
-        
+        ssize_t bytesWritten = write(fdSocket, strResponse, strlen(strResponse));
+        if (bytesWritten < 0) {
+       	     perror("Write failed");
+        }
         // Log the error
         printf("\nError: Unable to save file path: %s (error code: %d)\n", strFilePath, fdFile);
         printf("Response sent to client:\n%s\n", strResponse);
@@ -245,14 +255,17 @@ void SendPUTresponse(int fdSocket, char strFilePath[], char strBody[], char strR
     close(fdFile);
 }
 
-void SendGETresponse(int fdSocket, char strFilePath[], char strResponse[]) {
+void SendGETresponse(int fdSocket, char* strFilePath, char* strResponse) {
     // Open the file in read-only mode
     int fdFile = open(strFilePath, O_RDONLY);
     if (fdFile < 0) {
         // Send an HTTP 404 response if the file cannot be opened
         sprintf(strResponse, "%s", HTTP_404HEADER);
-        write(fdSocket, strResponse, strlen(strResponse));
-        
+        ssize_t bytesWritten = write(fdSocket, strResponse, strlen(strResponse));
+        if (bytesWritten < 0) {
+             perror("Write failed");
+        }
+
         // Log the error and response
         printf("\nError: Unable to open file path: %s (error code: %d)\n", strFilePath, fdFile);
         printf("Response sent to client:\n%s\n", strResponse);

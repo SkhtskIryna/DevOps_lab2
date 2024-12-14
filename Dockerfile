@@ -1,46 +1,48 @@
 FROM alpine AS build
 
-# Install required packages for building
+# Install required packages for building the project
 RUN apk add --no-cache \
-    autoconf \
-    m4 \
-    make \
-    perl \
-    build-base \
-    automake \
-    git \
-    pkgconfig \
-    glib-dev \
-    gtest-dev \
-    gtest \
+    bash \                  
+    autoconf \               
+    automake \              
+    make \                   
+    perl \                   
+    build-base \             
+    automake \               
+    git \                   
+    pkgconfig \              
+    glib-dev \               
+    gtest-dev \              
+    gtest \                 
     cmake \
-    libstdc++ \
-    g++
+    g++                   
 
-# Clone the repository and build the project
-WORKDIR /home/app
-RUN git clone --branch branchHTTPservMulti https://github.com/SkhtskIryna/DevOps_lab2.git
-WORKDIR /home/app/DevOps_lab2
+# Copy the deb directory to the /opt/$(PACKAGE) folder in the container
+COPY . /home/DevOps_lab2
+# Clone the repository from GitHub, specifying the branch to build
+WORKDIR /home/DevOps_lab2
 
-# Configure and build the project
-RUN autoreconf -fiv
+# Run the build commands to configure and compile the project
+RUN aclocal              
+RUN autoconf              
+RUN automake --add-missing            
 RUN ./configure
-RUN cmake
+RUN pkg-config --cflags --libs gtest glib-2.0        
 RUN make clean
-RUN make
+RUN make VERBOSE=1
 
-RUN ls -la /home/app/DevOps_lab2
+# List the files in the project directory to verify the build
+RUN ls -la /home/DevOps_lab2
 
 FROM alpine
 
-# Copy the built program from the build stage
-COPY --from=build /home/app/DevOps_lab2/program /usr/local/bin/program
+# Copy the compiled program from the build stage to the runtime image
+COPY --from=build /home/DevOps_lab2/program /usr/local/bin/program
 
-# Ensure the binary is executable
+# Ensure the program is executable
 RUN chmod +x /usr/local/bin/program
 
-# Set the entry point
+# Set the entry point to run the program when the container starts
 ENTRYPOINT ["/usr/local/bin/program"]
 
 RUN ls -la /usr/local/bin
-

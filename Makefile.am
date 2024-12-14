@@ -2,52 +2,53 @@ PACKAGE = program
 VERSION = 1.0
 PACKAGE_BUGREPORT = foxira242@gmail.com
 
+# Specify the program to build
+bin_PROGRAMS = program
+
+# Specify the source files for the program
+program_SOURCES = main.cpp suite.cpp HTTP_Server.cpp suite.h HTTP_Server.h
+
+# Additional linker flags
+program_LDFLAGS = -static
+
+# Automake options
 AUTOMAKE_OPTIONS = foreign subdir-objects
 
-bin_PROGRAMS = program
-program_SOURCES = main.cpp suite.cpp
+# Files to clean
+CLEANFILES = $(bin_PROGRAMS)
 
-bin_PROGRAMS += test
-test_SOURCES = tests/main_test.cpp suite.cpp
+# Ensure phony targets are not confused with files
+.PHONY: deb debug docker docker-push clean
 
-CTRLF_DIR = $(CURDIR)/deb/DEBIAN
-CTRLF_NAME = $(CTRLF_DIR)/control
-
-uninstall-hook:
-	rm -d $(datarootdir)/$(PACKAGE)/data
-	rm -d $(datarootdir)/$(PACKAGE)
-
-.PHONY: deb debug
-
-.PHONY: deb debug docker docker-push
-
+# Target for debugging information
 debug:
 	@echo "Package: $(PACKAGE)"
 	@echo "Version: $(VERSION)"
 	@echo "Bug Report: $(PACKAGE_BUGREPORT)"
 	@echo "Source Files: $(program_SOURCES)"
 
+# Create Debian package structure and control file
 deb:
-	mkdir -p $(CTRLF_DIR)
-	echo Package: $(PACKAGE) > $(CTRLF_NAME)
-	echo Version: $(VERSION) >> $(CTRLF_NAME)
-	echo Architecture: all >> $(CTRLF_NAME)
-	echo Maintainer: $(PACKAGE_BUGREPORT) >> $(CTRLF_NAME)
-	echo -n "Description: " >> $(CTRLF_NAME)
-	echo "calculation software" >> $(CTRLF_NAME)
+	mkdir -p $(CURDIR)/deb/DEBIAN
+	echo "Package: $(PACKAGE)" > $(CURDIR)/deb/DEBIAN/control
+	echo "Version: $(VERSION)" >> $(CURDIR)/deb/DEBIAN/control
+	echo "Architecture: all" >> $(CURDIR)/deb/DEBIAN/control
+	echo "Maintainer: $(PACKAGE_BUGREPORT)" >> $(CURDIR)/deb/DEBIAN/control
+	echo "Description: Calculation software" >> $(CURDIR)/deb/DEBIAN/control
 	make DESTDIR=$(CURDIR)/deb install
-	@echo "Creating Docker image..."
-	make docker
 
+# Build a Docker image
 docker:
 	@echo "Building Docker image..."
 	echo "FROM ubuntu:latest" > Dockerfile
 	echo "MAINTAINER $(PACKAGE_BUGREPORT)" >> Dockerfile
 	echo "COPY deb /opt/$(PACKAGE)" >> Dockerfile
-	echo "RUN apt-get update && apt-get install -y ./opt/$(PACKAGE)" >> Dockerfile
+	echo "RUN apt-get update && apt-get install -y build-essential g++ make" >> Dockerfile
+	echo "RUN apt-get clean" >> Dockerfile
 	echo "ENTRYPOINT [\"/opt/$(PACKAGE)/bin/program\"]" >> Dockerfile
 	docker build -t $(PACKAGE):$(VERSION) .
 
+# Push the Docker image to DockerHub
 docker-push:
 	@echo "Pushing Docker image to DockerHub..."
 	@if [ -z "$(DOCKER_USER)" ] || [ -z "$(DOCKER_PASS)" ]; then \
@@ -58,7 +59,4 @@ docker-push:
 	docker tag $(PACKAGE):$(VERSION) $(DOCKER_USER)/$(PACKAGE):$(VERSION)
 	docker push $(DOCKER_USER)/$(PACKAGE):$(VERSION)
 	docker logout
-	echo Maintainer: $(PACKAGE_BUGREPORT) >> $(CTRLF_NAME)
-	echo -n "Description: " >> $(CTRLF_NAME)
-	echo "calculation software" >> $(CTRLF_NAME)
-	make DESTDIR=$(CURDIR)/deb install
+

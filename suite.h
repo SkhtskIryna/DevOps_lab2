@@ -4,7 +4,7 @@
 //Creating a class
 class Suite { 
 public:
-  double FuncA(int n, double x); //Function declaration
+  int FuncA(int n); //Function declaration
 };
 
 #endif

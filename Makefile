@@ -86,7 +86,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = program$(EXEEXT) test$(EXEEXT)
+bin_PROGRAMS = program$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -101,13 +101,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_program_OBJECTS = main.$(OBJEXT) suite.$(OBJEXT)
+am_program_OBJECTS = main.$(OBJEXT) suite.$(OBJEXT) \
+	HTTP_Server.$(OBJEXT)
 program_OBJECTS = $(am_program_OBJECTS)
 program_LDADD = $(LDADD)
-am__dirstamp = $(am__leading_dot)dirstamp
-am_test_OBJECTS = tests/main_test.$(OBJEXT) suite.$(OBJEXT)
-test_OBJECTS = $(am_test_OBJECTS)
-test_LDADD = $(LDADD)
+program_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(program_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -123,8 +122,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/main.Po ./$(DEPDIR)/suite.Po \
-	tests/$(DEPDIR)/main_test.Po
+am__depfiles_remade = ./$(DEPDIR)/HTTP_Server.Po ./$(DEPDIR)/main.Po \
+	./$(DEPDIR)/suite.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -139,8 +138,20 @@ AM_V_CXXLD = $(am__v_CXXLD_$(V))
 am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(program_SOURCES) $(test_SOURCES)
-DIST_SOURCES = $(program_SOURCES) $(test_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_$(V))
+am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_$(V))
+am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
+SOURCES = $(program_SOURCES)
+DIST_SOURCES = $(program_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -164,7 +175,8 @@ am__define_uniq_tagged_files = \
     if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
   done | $(am__uniquify_input)`
 AM_RECURSIVE_TARGETS = cscope
-am__DIST_COMMON = $(srcdir)/Makefile.in depcomp install-sh missing
+am__DIST_COMMON = $(srcdir)/Makefile.in compile depcomp install-sh \
+	missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -191,6 +203,9 @@ AUTOCONF = ${SHELL} '/home/ira/DevOps_lab2/missing' autoconf
 AUTOHEADER = ${SHELL} '/home/ira/DevOps_lab2/missing' autoheader
 AUTOMAKE = ${SHELL} '/home/ira/DevOps_lab2/missing' automake-1.16
 AWK = mawk
+CC = gcc
+CCDEPMODE = depmode=gcc3
+CFLAGS = -g -O2
 CPPFLAGS = 
 CSCOPE = cscope
 CTAGS = ctags
@@ -240,6 +255,7 @@ abs_builddir = /home/ira/DevOps_lab2
 abs_srcdir = /home/ira/DevOps_lab2
 abs_top_builddir = /home/ira/DevOps_lab2
 abs_top_srcdir = /home/ira/DevOps_lab2
+ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
 am__leading_dot = .
@@ -279,11 +295,18 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
+
+# Specify the source files for the program
+program_SOURCES = main.cpp suite.cpp HTTP_Server.cpp suite.h HTTP_Server.h
+
+# Additional linker flags
+program_LDFLAGS = -static
+
+# Automake options
 AUTOMAKE_OPTIONS = foreign subdir-objects
-program_SOURCES = main.cpp suite.cpp
-test_SOURCES = tests/main_test.cpp suite.cpp
-CTRLF_DIR = $(CURDIR)/deb/DEBIAN
-CTRLF_NAME = $(CTRLF_DIR)/control
+
+# Files to clean
+CLEANFILES = $(bin_PROGRAMS)
 all: all-am
 
 .SUFFIXES:
@@ -366,30 +389,17 @@ clean-binPROGRAMS:
 
 program$(EXEEXT): $(program_OBJECTS) $(program_DEPENDENCIES) $(EXTRA_program_DEPENDENCIES) 
 	@rm -f program$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(program_OBJECTS) $(program_LDADD) $(LIBS)
-tests/$(am__dirstamp):
-	@$(MKDIR_P) tests
-	@: > tests/$(am__dirstamp)
-tests/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) tests/$(DEPDIR)
-	@: > tests/$(DEPDIR)/$(am__dirstamp)
-tests/main_test.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-test$(EXEEXT): $(test_OBJECTS) $(test_DEPENDENCIES) $(EXTRA_test_DEPENDENCIES) 
-	@rm -f test$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(test_OBJECTS) $(test_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(program_LINK) $(program_OBJECTS) $(program_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f tests/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/HTTP_Server.Po # am--include-marker
 include ./$(DEPDIR)/main.Po # am--include-marker
 include ./$(DEPDIR)/suite.Po # am--include-marker
-include tests/$(DEPDIR)/main_test.Po # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -672,12 +682,11 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
-	-rm -f tests/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -688,9 +697,9 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-		-rm -f ./$(DEPDIR)/main.Po
+		-rm -f ./$(DEPDIR)/HTTP_Server.Po
+	-rm -f ./$(DEPDIR)/main.Po
 	-rm -f ./$(DEPDIR)/suite.Po
-	-rm -f tests/$(DEPDIR)/main_test.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -738,9 +747,9 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-		-rm -f ./$(DEPDIR)/main.Po
+		-rm -f ./$(DEPDIR)/HTTP_Server.Po
+	-rm -f ./$(DEPDIR)/main.Po
 	-rm -f ./$(DEPDIR)/suite.Po
-	-rm -f tests/$(DEPDIR)/main_test.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -757,9 +766,8 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
-.MAKE: install-am install-strip uninstall-am
+
+.MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles am--refresh check \
 	check-am clean clean-binPROGRAMS clean-cscope clean-generic \
@@ -776,32 +784,53 @@ uninstall-am: uninstall-binPROGRAMS
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-binPROGRAMS uninstall-hook
+	uninstall-am uninstall-binPROGRAMS
 
 .PRECIOUS: Makefile
 
 
-uninstall-hook:
-	rm -d $(datarootdir)/$(PACKAGE)/data
-	rm -d $(datarootdir)/$(PACKAGE)
+# Ensure phony targets are not confused with files
+.PHONY: deb debug docker docker-push clean
 
-.PHONY: deb debug
-
+# Target for debugging information
 debug:
 	@echo "Package: $(PACKAGE)"
 	@echo "Version: $(VERSION)"
 	@echo "Bug Report: $(PACKAGE_BUGREPORT)"
 	@echo "Source Files: $(program_SOURCES)"
 
+# Create Debian package structure and control file
 deb:
-	mkdir -p $(CTRLF_DIR)
-	echo Package: $(PACKAGE) > $(CTRLF_NAME)
-	echo Version: $(VERSION) >> $(CTRLF_NAME)
-	echo Architecture: all >> $(CTRLF_NAME)
-	echo Maintainer: $(PACKAGE_BUGREPORT) >> $(CTRLF_NAME)
-	echo -n "Description: " >> $(CTRLF_NAME)
-	echo "calculation software" >> $(CTRLF_NAME)
+	mkdir -p $(CURDIR)/deb/DEBIAN
+	echo "Package: $(PACKAGE)" > $(CURDIR)/deb/DEBIAN/control
+	echo "Version: $(VERSION)" >> $(CURDIR)/deb/DEBIAN/control
+	echo "Architecture: all" >> $(CURDIR)/deb/DEBIAN/control
+	echo "Maintainer: $(PACKAGE_BUGREPORT)" >> $(CURDIR)/deb/DEBIAN/control
+	echo "Description: Calculation software" >> $(CURDIR)/deb/DEBIAN/control
 	make DESTDIR=$(CURDIR)/deb install
+
+# Build a Docker image
+docker:
+	@echo "Building Docker image..."
+	echo "FROM ubuntu:latest" > Dockerfile
+	echo "MAINTAINER $(PACKAGE_BUGREPORT)" >> Dockerfile
+	echo "COPY deb /opt/$(PACKAGE)" >> Dockerfile
+	echo "RUN apt-get update && apt-get install -y build-essential g++ make" >> Dockerfile
+	echo "RUN apt-get clean" >> Dockerfile
+	echo "ENTRYPOINT [\"/opt/$(PACKAGE)/bin/program\"]" >> Dockerfile
+	docker build -t $(PACKAGE):$(VERSION) .
+
+# Push the Docker image to DockerHub
+docker-push:
+	@echo "Pushing Docker image to DockerHub..."
+	@if [ -z "$(DOCKER_USER)" ] || [ -z "$(DOCKER_PASS)" ]; then \
+		echo "Please set DOCKER_USER and DOCKER_PASS environment variables"; \
+		exit 1; \
+	fi
+	echo "$(DOCKER_PASS)" | docker login -u "$(DOCKER_USER)" --password-stdin
+	docker tag $(PACKAGE):$(VERSION) $(DOCKER_USER)/$(PACKAGE):$(VERSION)
+	docker push $(DOCKER_USER)/$(PACKAGE):$(VERSION)
+	docker logout
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
