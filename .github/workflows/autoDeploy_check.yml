@@ -27,8 +27,6 @@ jobs:
         script_pid=$!
 
         echo "Script is running with PID: $script_pid"
-
-        # Let the script run for 2 minutes (120 seconds)
         sleep 10
 
         # Stop the script process
