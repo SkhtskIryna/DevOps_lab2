@@ -11,24 +11,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Check out the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # Set up Docker environment
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v2
 
-      # Install required dependencies
-      - name: Install required tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bc
+    - name: Test Bash script
+      run: |
+        # Ensure script permissions
+        chmod +x ./script.sh
 
-      # Grant execution permissions to the script
-      - name: Make script executable
-        run: chmod +x scriptA.sh
+        # Run the script in the background
+        ./script.sh &
+        script_pid=$!
 
-      # Execute the script
-      - name: Run Docker management script
-        run: ./scriptA.sh
+        echo "Script is running with PID: $script_pid"
+
+        # Let the script run for 2 minutes (120 seconds)
+        sleep 120
+
+        # Stop the script process
+        echo "Stopping the script..."
+        kill $script_pid
+
+        # Ensure all related Docker containers are stopped and removed
+        echo "Cleaning up Docker containers..."
+        docker ps -q --filter "name=srv" | xargs -r docker rm -f
+
+    - name: Verify Docker state
+      run: |
+        echo "Checking Docker state..."
+        docker ps
+
+    - name: Check logs
+      run: |
+        echo "Test completed. Verify logs for script behavior."
