@@ -7,7 +7,7 @@ on:
     branches: ["branchHTTPservMulti"]
 
 jobs:
-  test-scriptA:
+  test-autoDeploy:
     runs-on: ubuntu-latest
 
     steps:
