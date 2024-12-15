@@ -11,28 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v2
+      # Set up Docker environment
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
 
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-      
-    - name: Build and push HTTP server image
-      run: |
-        docker build -t skhtskiryna/my-http-server:latest .
-        docker tag skhtskiryna/my-http-server:latest skhtskiryna/my-http-server:latest
-        docker push skhtskiryna/my-http-server:latest
+      # Install required dependencies
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc
 
-    - name: Run scriptA
-      run: |
-        chmod +x scriptA.sh
-        ./scriptA.sh &
+      # Grant execution permissions to the script
+      - name: Make script executable
+        run: chmod +x scriptA.sh
 
-    - name: Validate scriptA
-      run: |
-        echo "Validating srv1, srv2, and srv3 behavior"
-        sleep 100  # Allow scriptA to run for a while
-        docker ps  # Check running containers
+      # Execute the script
+      - name: Run Docker management script
+        run: ./scriptA.sh
