@@ -1,0 +1,49 @@
+name: Test autoDeploy
+
+on:
+  push:
+    branches: ["branchHTTPservMulti"]
+  pull_request:
+    branches: ["branchHTTPservMulti"]
+
+jobs:
+  test-scriptA:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v2
+
+    - name: Test Bash script
+      run: |
+        # Ensure script permissions
+        chmod +x ./autoDeploy.sh
+
+        # Run the script in the background
+        ./autoDeploy.sh &
+        script_pid=$!
+
+        echo "Script is running with PID: $script_pid"
+
+        # Let the script run for 2 minutes (120 seconds)
+        sleep 10
+
+        # Stop the script process
+        echo "Stopping the script..."
+        kill $script_pid
+
+        # Ensure all related Docker containers are stopped and removed
+        echo "Cleaning up Docker containers..."
+        docker ps -q --filter "name=srv" | xargs -r docker rm -f
+
+    - name: Verify Docker state
+      run: |
+        echo "Checking Docker state..."
+        docker ps
+
+    - name: Check logs
+      run: |
+        echo "Test completed. Verify logs for script behavior."
