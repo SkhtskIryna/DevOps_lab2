@@ -20,10 +20,10 @@ jobs:
     - name: Test Bash script
       run: |
         # Ensure script permissions
-        chmod +x ./script.sh
+        chmod +x ./scriptA.sh
 
         # Run the script in the background
-        ./script.sh &
+        ./scriptA.sh &
         script_pid=$!
 
         echo "Script is running with PID: $script_pid"
