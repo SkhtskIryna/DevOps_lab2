@@ -1,0 +1,37 @@
+name: Test Response Time
+
+on:
+  push:
+    branches:
+      - "branchHTTPservMulti"
+  pull_request:
+    branches:
+      - "branchHTTPservMulti"
+
+jobs:
+  test-response-time:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Install curl
+      - name: Install curl
+        run: sudo apt-get install -y curl
+
+      # Execute the script and save output
+      - name: Run Bash script
+        run: |
+          chmod +x scriptA.sh
+          ./scriptA.sh > response_times.log &
+
+      # Analyze response times (example: fail if response > 2000ms)
+      - name: Analyze response times
+        run: |
+          if grep -E "Response time: [2-9][0-9]{3} ms" response_times.log; then
+            echo "High response time detected!"
+            exit 1
+          else
+            echo "All response times are within acceptable limits."
+          fi
