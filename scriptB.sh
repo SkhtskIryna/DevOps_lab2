@@ -11,8 +11,11 @@ while true; do
     # Measure start time
     start_time=$(date +%s%3N)
 
-    # Call the function to make a request
-    curl -i -X GET 127.0.0.1/compute
+    # Asynchronous request using curl
+    curl -s -o /dev/null -w "%{http_code}" 127.0.0.1/compute &
+
+    # Wait for all background processes to finish
+    wait
 
     # Measure end time
     end_time=$(date +%s%3N)
