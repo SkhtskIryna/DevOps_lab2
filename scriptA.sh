@@ -89,7 +89,7 @@ manage_containers() {
 
         # Update
         update_containers
-        sleep 120
+        sleep 10
     done
 }
 
