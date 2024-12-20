@@ -9,7 +9,7 @@ on:
       - "branchHTTPservMulti"
 
 jobs:
-  test-response-time:
+  asynchronous-calls:
     runs-on: ubuntu-latest
 
     steps:
